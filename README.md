@@ -15,7 +15,10 @@ Incluye **modo individual** y **modo multijugador en tiempo real** (salas con c�
   - La ronda no avanza hasta que **todos** han comprobado.
   - Resumen por ronda y clasificación final.
 - **Puntuación por proximidad** (0–10 por ronda) en espacio HSB con tono circular.
-- Diseño **responsive**, **modo claro/oscuro**, vista previa en tiempo real y patrón de tablero para apreciar la transparencia (alfa).
+- **Nombres editables dentro de la partida** (se sincronizan con toda la sala).
+- **Sonidos** generados con la Web Audio API (inicio de ronda, comprobación, fin de
+  partida), con botón para silenciar (preferencia guardada en `localStorage`).
+- Diseño **responsive**, **modo claro/oscuro** y vista previa del color en tiempo real.
 
 ---
 
@@ -28,6 +31,8 @@ match-the-color-game/
 │   ├── game.js             # Lógica pura: colores y puntuación
 │   ├── rooms.js            # Gestión de salas en memoria
 │   ├── render.yaml         # Config de despliegue en Render
+│   ├── Dockerfile          # Imagen del backend para contenedores
+│   ├── .dockerignore
 │   └── package.json
 ├── frontend/               # Sitio estático (HTML/CSS/JS vanilla)
 │   ├── index.html
@@ -108,6 +113,20 @@ Abre `http://localhost:5500` (o el puerto que indique tu servidor).
 3. En la otra: **Multijugador → escribe el código → Unirse**.
 4. El anfitrión pulsa **Iniciar partida**.
 
+### (Opcional) Backend con Docker
+
+El backend incluye un `Dockerfile` listo para producción:
+
+```bash
+cd backend
+docker build -t match-the-color-backend .
+docker run -p 3000:3000 match-the-color-backend
+# Con CORS restringido al dominio del frontend (Vercel, sin barra final):
+docker run -p 3000:3000 -e CLIENT_ORIGIN=https://match-the-color-game.vercel.app match-the-color-backend
+```
+
+El servidor quedará disponible en `http://localhost:3000`.
+
 ---
 
 ## ☁️ Despliegue
@@ -156,6 +175,7 @@ Abre `http://localhost:5500` (o el puerto que indique tu servidor).
 | `join_room`    | `{ code, name }`        | `{ ok, code, playerId } / {error}`|
 | `start_game`   | `{}`                    | `{ ok } / { error }`              |
 | `submit_check` | `{ guess:{h,s,v} }`     | `{ ok, score, totalScore }`       |
+| `rename_player`| `{ name }`              | `{ ok, name } / { error }`        |
 | `restart_game` | `{}`                    | `{ ok } / { error }`              |
 | `leave_room`   | `{}`                    | —                                 |
 

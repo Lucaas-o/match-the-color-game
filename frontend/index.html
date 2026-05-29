@@ -19,6 +19,7 @@
     </div>
     <div class="header-actions">
       <span id="connection-badge" class="badge badge-off" title="Estado del servidor multijugador">●&nbsp;offline</span>
+      <button id="sound-toggle" class="icon-btn" title="Activar/silenciar sonidos">🔊</button>
       <button id="theme-toggle" class="icon-btn" title="Cambiar tema">🌙</button>
     </div>
   </header>
@@ -94,6 +95,12 @@
             <button id="btn-copy-code" class="icon-btn" title="Copiar código">📋</button>
           </div>
           <small class="muted">Comparte este código con tus amigos (2-4 jugadores).</small>
+        </div>
+
+        <!-- Edición de nombre dentro de la sala -->
+        <div class="rename-row">
+          <input id="input-rename" type="text" maxlength="16" placeholder="Tu nombre" />
+          <button id="btn-rename" class="big-btn secondary small">Cambiar nombre</button>
         </div>
 
         <h3 class="players-title">Jugadores conectados</h3>

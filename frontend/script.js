@@ -89,6 +89,62 @@ function showScreen(id) {
 }
 
 /* ---------------------------------------------------------
+   1.b Sonidos (Web Audio API, sin archivos externos)
+   --------------------------------------------------------- */
+const Sound = {
+  ctx: null,
+  enabled: localStorage.getItem('mtc-sound') !== 'off',
+
+  /** Crea el AudioContext la primera vez (tras interacción del usuario). */
+  _ensureCtx() {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) this.ctx = new AC();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    return this.ctx;
+  },
+
+  /** Reproduce un tono simple. freq en Hz, dur en segundos. */
+  _tone(freq, dur, type = 'sine', gain = 0.2) {
+    if (!this.enabled) return;
+    const ctx = this._ensureCtx();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const vol = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    vol.gain.setValueAtTime(gain, ctx.currentTime);
+    // Envolvente de caída para un sonido más agradable.
+    vol.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    osc.connect(vol).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + dur);
+  },
+
+  /** Secuencia de notas (melodías cortas). notes: [{f, d}] */
+  _sequence(notes) {
+    if (!this.enabled) return;
+    let t = 0;
+    notes.forEach((n) => {
+      setTimeout(() => this._tone(n.f, n.d, n.type || 'sine', n.g || 0.2), t * 1000);
+      t += n.d;
+    });
+  },
+
+  roundStart() { this._tone(660, 0.18, 'triangle'); },
+  check()      { this._tone(880, 0.12, 'square', 0.15); },
+  gameEnd()    { this._sequence([{ f: 523, d: 0.15 }, { f: 659, d: 0.15 }, { f: 784, d: 0.15 }, { f: 1047, d: 0.3 }]); },
+
+  toggle() {
+    this.enabled = !this.enabled;
+    localStorage.setItem('mtc-sound', this.enabled ? 'on' : 'off');
+    if (this.enabled) this.check(); // pequeño feedback al activar
+    return this.enabled;
+  },
+};
+
+/* ---------------------------------------------------------
    2. Estado global de la aplicación
    --------------------------------------------------------- */
 const state = {
@@ -169,6 +225,7 @@ function setupRoundUI(round) {
 function runMemorizePhase(color, memorizeMs) {
   state.phase = 'memorize';
   state.originalColor = color;
+  Sound.roundStart();
 
   $('phase-indicator').textContent = '👀 Memoriza el color';
   slidersBox.classList.add('hidden');
@@ -250,6 +307,7 @@ function nextSoloRound() {
 
 function checkSolo() {
   if (state.phase !== 'guess') return;
+  Sound.check();
   const guess = readSliders();
   const score = scoreRound(state.originalColor, guess);
 
@@ -279,6 +337,7 @@ function revealSoloAnswer(score) {
 }
 
 function showSoloResults() {
+  Sound.gameEnd();
   showScreen('screen-results');
   const max = TOTAL_ROUNDS * 10;
   const rows = state.roundScores
@@ -410,7 +469,22 @@ function enterRoom(code) {
   state.totalScore = 0;
   state.roundScores = [];
   $('room-code-display').textContent = code;
+  // Prerellenamos el campo de renombrado con el nombre actual del jugador.
+  $('input-rename').value = $('input-name').value.trim();
   showScreen('screen-room');
+}
+
+/** Cambia el nombre del jugador (se sincroniza con toda la sala). */
+function renamePlayer() {
+  const name = $('input-rename').value.trim();
+  if (!name) return;
+  ensureSocket().emit('rename_player', { name }, (res) => {
+    if (res && res.ok) {
+      $('input-name').value = res.name; // mantener coherencia local
+    } else if (res) {
+      alert(res.error);
+    }
+  });
 }
 
 function startMultiGame() {
@@ -423,6 +497,7 @@ function startMultiGame() {
 
 function checkMulti() {
   if (state.phase !== 'guess') return;
+  Sound.check();
   const guess = readSliders();
   btnCheck.disabled = true;
   state.phase = 'wait';
@@ -545,6 +620,7 @@ function showRoundSummary(data) {
 }
 
 function showMultiResults(leaderboard) {
+  Sound.gameEnd();
   showScreen('screen-results');
   const max = TOTAL_ROUNDS * 10;
   const rows = leaderboard
@@ -631,6 +707,10 @@ function initNav() {
   // Sala de espera
   $('btn-leave-room').addEventListener('click', leaveRoom);
   $('btn-start-game').addEventListener('click', startMultiGame);
+  $('btn-rename').addEventListener('click', renamePlayer);
+  $('input-rename').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') renamePlayer();
+  });
   $('btn-copy-code').addEventListener('click', () => {
     navigator.clipboard.writeText(state.roomCode || '').then(() => {
       $('btn-copy-code').textContent = '✅';
@@ -646,8 +726,21 @@ function initNav() {
 }
 
 /* =========================================================
-   11. Arranque
+   11. Sonido: botón de activar/silenciar
+   ========================================================= */
+function initSound() {
+  const btn = $('sound-toggle');
+  btn.textContent = Sound.enabled ? '🔊' : '🔇';
+  btn.addEventListener('click', () => {
+    const on = Sound.toggle();
+    btn.textContent = on ? '🔊' : '🔇';
+  });
+}
+
+/* =========================================================
+   12. Arranque
    ========================================================= */
 initTheme();
+initSound();
 initNav();
 showScreen('screen-menu');

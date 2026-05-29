@@ -246,6 +246,28 @@ io.on('connection', (socket) => {
   });
 
   /**
+   * Cambiar el nombre del jugador en cualquier momento de la partida.
+   * El servidor sanea el nombre y notifica a toda la sala.
+   */
+  socket.on('rename_player', ({ name } = {}, callback) => {
+    const room = roomsApi.rooms.get(socket.data.roomCode);
+    if (!room) return;
+    const player = room.players.get(socket.id);
+    if (!player) return;
+
+    // Saneamos: recortamos espacios y limitamos a 16 caracteres.
+    const clean = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 16);
+    if (!clean) {
+      if (typeof callback === 'function') callback({ ok: false, error: 'Nombre vacío.' });
+      return;
+    }
+    player.name = clean;
+
+    if (typeof callback === 'function') callback({ ok: true, name: clean });
+    broadcastRoom(room);
+  });
+
+  /**
    * El anfitrión reinicia la partida tras el final.
    */
   socket.on('restart_game', (_data, callback) => {
