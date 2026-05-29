@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Match The Color · Juego de memoria de color</title>
+  <meta name="description" content="Memoriza un color y reprodúcelo con sliders HSB (tono, saturación, brillo). Modo individual y multijugador en tiempo real." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- ====================== CABECERA ====================== -->
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <h1>Match&nbsp;The&nbsp;Color</h1>
+    </div>
+    <div class="header-actions">
+      <span id="connection-badge" class="badge badge-off" title="Estado del servidor multijugador">●&nbsp;offline</span>
+      <button id="theme-toggle" class="icon-btn" title="Cambiar tema">🌙</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ====================== PANTALLA: MENÚ ====================== -->
+    <section id="screen-menu" class="screen active">
+      <div class="card center-card">
+        <h2 class="tagline">Memoriza el color. Reprodúcelo. Gana puntos.</h2>
+        <p class="subtitle">Tienes 3 segundos para memorizar un color y luego debes recrearlo con los sliders de tono, saturación y brillo.</p>
+
+        <div class="menu-grid">
+          <button id="btn-solo" class="big-btn primary">
+            <span class="big-btn-icon">🎯</span>
+            <span class="big-btn-title">Jugar solo</span>
+            <span class="big-btn-sub">5 rondas · puntuación máx. 50</span>
+          </button>
+
+          <button id="btn-multi" class="big-btn secondary">
+            <span class="big-btn-icon">👥</span>
+            <span class="big-btn-title">Multijugador</span>
+            <span class="big-btn-sub">Crea o únete a una sala</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PANTALLA: LOBBY MULTIJUGADOR (crear/unir) ============ -->
+    <section id="screen-lobby-entry" class="screen">
+      <div class="card center-card">
+        <button class="link-back" data-goto="screen-menu">← Volver</button>
+        <h2>Multijugador</h2>
+
+        <label class="field">
+          <span>Tu nombre</span>
+          <input id="input-name" type="text" maxlength="16" placeholder="Ej: Lucas" />
+        </label>
+
+        <div class="entry-grid">
+          <div class="entry-block">
+            <h3>Crear partida</h3>
+            <p class="muted">Genera un código para que tus amigos se unan.</p>
+            <button id="btn-create-room" class="big-btn primary small">Crear sala</button>
+          </div>
+
+          <div class="divider-or"><span>o</span></div>
+
+          <div class="entry-block">
+            <h3>Unirse a partida</h3>
+            <label class="field">
+              <span>Código de sala</span>
+              <input id="input-code" type="text" maxlength="6" placeholder="ABC123" class="code-input" />
+            </label>
+            <button id="btn-join-room" class="big-btn secondary small">Unirse</button>
+          </div>
+        </div>
+
+        <p id="entry-error" class="error-msg" role="alert"></p>
+      </div>
+    </section>
+
+    <!-- ============ PANTALLA: SALA DE ESPERA ============ -->
+    <section id="screen-room" class="screen">
+      <div class="card center-card">
+        <button class="link-back" id="btn-leave-room">← Salir de la sala</button>
+        <h2>Sala de espera</h2>
+
+        <div class="room-code-box">
+          <span class="muted">Código de la sala</span>
+          <div class="room-code-row">
+            <strong id="room-code-display">------</strong>
+            <button id="btn-copy-code" class="icon-btn" title="Copiar código">📋</button>
+          </div>
+          <small class="muted">Comparte este código con tus amigos (2-4 jugadores).</small>
+        </div>
+
+        <h3 class="players-title">Jugadores conectados</h3>
+        <ul id="room-players" class="player-list"></ul>
+
+        <button id="btn-start-game" class="big-btn primary" disabled>Iniciar partida</button>
+        <p id="room-hint" class="muted center"></p>
+      </div>
+    </section>
+
+    <!-- ============ PANTALLA: JUEGO (solo y multi comparten) ============ -->
+    <section id="screen-game" class="screen">
+      <div class="game-layout">
+
+        <!-- Columna izquierda: el color + temporizador + sliders -->
+        <div class="card game-main">
+          <div class="round-bar">
+            <span id="round-indicator" class="round-chip">Ronda 1 / 5</span>
+            <span id="phase-indicator" class="phase-chip">Memoriza…</span>
+          </div>
+
+          <!-- Área grande del color (referencia o vista previa) -->
+          <div id="color-area" class="color-area">
+            <div id="countdown" class="countdown"></div>
+            <div id="ref-color-text" class="ref-color-text"></div>
+          </div>
+
+          <!-- Controles deslizantes (modelo HSB) -->
+          <div id="sliders" class="sliders hidden">
+            <div class="slider-row">
+              <label class="slider-label">HUE</label>
+              <input type="range" id="slider-h" class="hue-slider" min="0" max="360" value="180" />
+              <output id="val-h">180</output>
+            </div>
+            <div class="slider-row">
+              <label class="slider-label">SAT</label>
+              <input type="range" id="slider-s" min="0" max="100" value="50" />
+              <output id="val-s">50</output>
+            </div>
+            <div class="slider-row">
+              <label class="slider-label">BRI</label>
+              <input type="range" id="slider-v" min="0" max="100" value="50" />
+              <output id="val-v">50</output>
+            </div>
+
+            <button id="btn-check" class="big-btn primary" disabled>Comprobar</button>
+            <p id="wait-others" class="muted center hidden">⏳ Esperando a los demás jugadores…</p>
+          </div>
+        </div>
+
+        <!-- Columna derecha: puntuación + jugadores -->
+        <aside class="card game-side">
+          <h3>Puntuación</h3>
+          <div class="score-box">
+            <div class="score-item">
+              <span class="muted">Ronda</span>
+              <strong id="round-score">—</strong>
+            </div>
+            <div class="score-item">
+              <span class="muted">Total</span>
+              <strong id="total-score">0.00</strong>
+            </div>
+          </div>
+
+          <div id="rounds-history-wrap">
+            <h4>Historial de rondas</h4>
+            <ol id="rounds-history" class="rounds-history"></ol>
+          </div>
+
+          <!-- Solo visible en multijugador -->
+          <div id="multi-scoreboard-wrap" class="hidden">
+            <h4>Jugadores</h4>
+            <ul id="multi-scoreboard" class="player-list compact"></ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ PANTALLA: RESULTADOS FINALES ============ -->
+    <section id="screen-results" class="screen">
+      <div class="card center-card">
+        <h2>🏁 Partida terminada</h2>
+        <div id="results-content"></div>
+        <div class="results-actions">
+          <button id="btn-restart" class="big-btn primary">Jugar de nuevo</button>
+          <button id="btn-back-menu" class="big-btn secondary" data-goto="screen-menu">Menú principal</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====================== MODAL: RESUMEN DE RONDA (multi) ====================== -->
+  <div id="round-summary-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <h3 id="summary-title">Resultado de la ronda</h3>
+      <div class="summary-colors">
+        <div>
+          <span class="muted">Color objetivo</span>
+          <div id="summary-original" class="mini-swatch"></div>
+          <code id="summary-original-text"></code>
+        </div>
+      </div>
+      <ul id="summary-list" class="player-list"></ul>
+      <p class="muted center" id="summary-next"></p>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span class="muted">Inspirado en dialed.gg · Hecho con HTML, CSS, JS y Socket.IO</span>
+  </footer>
+
+  <!-- Cliente de Socket.IO (CDN). Para uso 100% offline en solo, no es imprescindible. -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

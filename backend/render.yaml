@@ -1,0 +1,16 @@
+# Configuración de despliegue para Render (Infrastructure as Code).
+# Render detecta este archivo y crea el servicio automáticamente.
+services:
+  - type: web
+    name: match-the-color-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.20.0
+      # Opcional: restringe CORS a tu dominio de Vercel en producción.
+      # - key: CLIENT_ORIGIN
+      #   value: https://tu-app.vercel.app

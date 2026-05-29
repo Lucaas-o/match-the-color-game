@@ -1,0 +1,32 @@
+{
+  "name": "match-the-color-backend",
+  "version": "1.0.0",
+  "description": "Backend en tiempo real (Express + Socket.IO) para el juego de memoria de colores Match The Color",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "color",
+    "memory",
+    "game",
+    "socket.io",
+    "websockets",
+    "multiplayer"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

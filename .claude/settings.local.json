@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($env:PORT=\"3999\"; $proc = Start-Process node -ArgumentList \"server.js\" -PassThru -NoNewWindow -RedirectStandardOutput \"srv.log\" -RedirectStandardError \"srverr.log\"; Start-Sleep -Seconds 2; node -e \"const{io}=require\\('socket.io-client'\\);const a=io\\('http://localhost:3999'\\);a.on\\('connect',\\(\\)=>{a.emit\\('create_room',{name:'Ana'},\\(r\\)=>{console.log\\('create:',JSON.stringify\\(r\\)\\);const b=io\\('http://localhost:3999'\\);b.on\\('connect',\\(\\)=>{b.emit\\('join_room',{code:r.code,name:'Bob'},\\(r2\\)=>{console.log\\('join:',JSON.stringify\\(r2\\)\\);a.emit\\('start_game',{},\\(r3\\)=>{console.log\\('start:',JSON.stringify\\(r3\\)\\);}\\);}\\);}\\);a.on\\('round_start',\\(d\\)=>{console.log\\('round_start round',d.round,'colorOK:',!!d.color\\);process.exit\\(0\\);}\\);}\\);}\\);setTimeout\\(\\(\\)=>{console.log\\('TIMEOUT'\\);process.exit\\(1\\);},6000\\);\" 2>&1; Stop-Process -Id $proc.Id -Force)"
+    ]
+  }
+}
