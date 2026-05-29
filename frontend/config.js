@@ -6,10 +6,10 @@
  * BACKEND_URL: URL del servidor Socket.IO.
  *   - En desarrollo local: "http://localhost:3000"
  *   - En producción: la URL pública de tu backend en Render/Railway,
- *     por ejemplo "https://match-the-color.onrender.com"
+ *     por ejemplo "https://match-the-color-game.onrender.com/"
  *
  * Cambia este valor tras desplegar el backend.
  */
 window.APP_CONFIG = {
-  BACKEND_URL: 'http://localhost:3000',
+  BACKEND_URL: 'https://match-the-color-game.onrender.com/',
 };
